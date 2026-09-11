@@ -4,10 +4,9 @@ $name  = "Ada Lovelace";
 $role  = "Engineer";
 $langs = array("Ruby", "PHP", "Assembly");
 
-echo implode(" ", ["Hello,", $name, "!"]);
-echo PHP_EOL;
+printf("Hello %s".PHP_EOL, $name);
 echo implode(" ", ["Role:", $role]);
-echo PHP_EOL;
+printf(PHP_EOL);
 
 function greet($who) {
   return implode(" ", ["Sup,", $who]);

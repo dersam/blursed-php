@@ -1,15 +1,18 @@
-module PHP
-
-  refine String do
-    def method_missing(name, ...)
-      self + name.to_s
-    end
-
-    def call(rhs)
-      self + rhs
-    end
+class String
+  def method_missing(name, ...)
+    self + name.to_s
   end
 
+  def call(rhs)
+    self + rhs
+  end
+
+  def PHP_EOL
+    self + "\n"
+  end
+end
+
+module PHP
   class Exec
     PHP_EOL = "\n"
 
@@ -17,7 +20,9 @@ module PHP
       @last = global_variables.dup
     end
 
-    def echo(*parts) = (print parts.join; @last = global_variables.dup) # echo "a", "b";  (no newline, like PHP)
+    def echo(*parts)
+       (print parts.join; @last = global_variables.dup) # echo "a", "b";  (no newline, like PHP)
+    end
     def array(*items) = items                         # array(1, 2, 3)
     def isset(x) = !x.nil?                             # isset($x)
     def count(x) = x.size                              # count($x)
