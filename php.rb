@@ -1,3 +1,5 @@
+require "prism"
+
 class String
   def method_missing(name, ...)
     self + name.to_s
@@ -16,18 +18,14 @@ module PHP
   class Exec
     PHP_EOL = "\n"
 
-    def initialize
-      @last = global_variables.dup
-    end
-
     def echo(*parts)
-       (print parts.join; @last = global_variables.dup) # echo "a", "b";  (no newline, like PHP)
+      print parts.join                               # echo "a", "b";  (no newline, like PHP)
     end
     def array(*items) = items                         # array(1, 2, 3)
     def isset(x) = !x.nil?                             # isset($x)
     def count(x) = x.size                              # count($x)
     def strlen(s) = s.length
-    def implode(glue, xs) = (@last = global_variables.dup; xs.join(glue)) # implode(", ", $x)
+    def implode(glue, xs) = xs.join(glue)             # implode(", ", $x)
     def null; nil; end                                 # null
 
     def function(input)                               # function greet($who) { return ... }
@@ -35,17 +33,19 @@ module PHP
       define_singleton_method(:__fn_, &blk)           # block becomes a Method so `return` scopes to it
       fn = method(:__fn_)
       define_singleton_method(name) do |*args, **kwargs|
-        params&.each_with_index { |p, i| eval("#{p} = args[i]", binding) if args[i] }
+        params.each_with_index do |param, index|
+          value = args[index]
+          eval("#{param} = value", binding)
+        end
         fn.call
       end
-      @last = global_variables.dup
     end
 
     def method_missing(name, *args, **kwargs, &block)
       return nil if %i(to_a to_hash to_io to_str to_ary to_int).include?(name)
 
       if block                                         # function greet($who) { ... }
-        [name, block, global_variables - @last]
+        [name, block, @function_params.fetch(name)] # Fetch the parameters for this function that we parsed earlier
       else
         [name, block]
       end
@@ -53,7 +53,29 @@ module PHP
 
     def run_file(path)
       src = File.read(path)
+      @function_params = collect_function_params(Prism.parse(src).value)
       instance_eval(src, path)
+    end
+
+    private
+
+    def collect_function_params(node, functions = {})
+      if node.is_a?(Prism::CallNode) && node.name == :function
+        declaration = node.arguments&.arguments&.first
+        unless declaration.is_a?(Prism::CallNode) && declaration.block
+          raise SyntaxError, "unsupported function declaration"
+        end
+
+        parameters = declaration.arguments&.arguments || []
+        unless parameters.all? { |parameter| parameter.is_a?(Prism::GlobalVariableReadNode) }
+          raise SyntaxError, "function parameters must be simple variables"
+        end
+
+        functions[declaration.name] = parameters.map(&:name)
+      end
+
+      node.compact_child_nodes.each { |child| collect_function_params(child, functions) }
+      functions
     end
   end
 
