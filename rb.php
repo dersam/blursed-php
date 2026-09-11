@@ -11,7 +11,7 @@ function greet($who) {
   return implode(" ", ["Sup,", $who]);
 }
 
-echo greet("world") . PHP_EOL;
+echo greet($name) . PHP_EOL;
 
 $x = null;
 echo isset($x) ? "set" : "not";
