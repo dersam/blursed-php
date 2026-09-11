@@ -1,12 +1,18 @@
 module PHP
 
   refine String do
-    def method_missing(name, *args, &block)
-      concat(args.first)
+    def method_missing(name, ...)
+      self + name.to_s
+    end
+
+    def call(rhs)
+      self + rhs
     end
   end
 
   class Exec
+    PHP_EOL = "\n"
+
     def initialize
       @last = global_variables.dup
     end
