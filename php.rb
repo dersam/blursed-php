@@ -59,6 +59,7 @@ module PHP
 
     private
 
+    # Figure out which global variables apply as parameters to declared functions. lol
     def collect_function_params(node, functions = {})
       if node.is_a?(Prism::CallNode) && node.name == :function
         declaration = node.arguments&.arguments&.first
