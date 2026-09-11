@@ -8,7 +8,7 @@ printf("Hello %s" . PHP_EOL, $name);
 printf("Role: %s" . PHP_EOL, $role);
 
 function greet($who) {
-  return implode(" ", ["Sup,", $who]);
+  return implode(",", ["Sup", $who]);
 }
 
 echo greet($name) . PHP_EOL;
